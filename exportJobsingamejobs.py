@@ -1,3 +1,4 @@
+import collections
 import os
 
 import dateutil
@@ -77,10 +78,31 @@ def get_all_ingamejob_jobs():
 
     return jobs
 
+def rindex(lst, val, start=None):
+    if start is None:
+        start = len(lst)-1
+    for i in range(start,-1,-1):
+        if lst[i] == val:
+            return i
+    return -1
 
 def main():
 
     jobs = get_all_ingamejob_jobs()
+
+    link_list = [j[3] for j in jobs]
+    duplicated = [(item, count) for item, count in collections.Counter(link_list).items() if count > 1]
+    if len(duplicated)>0:
+        for duplicate, num in duplicated:
+            for i in range(num):
+                idx = rindex(link_list, duplicate)
+                del jobs[idx]
+                del link_list[idx]
+
+        link_list2 = [j[3] for j in jobs]
+        duplicated2 = [item for item, count in collections.Counter(link_list2).items() if count > 1]
+        assert len(duplicated2)==0
+
 
     return 0
 

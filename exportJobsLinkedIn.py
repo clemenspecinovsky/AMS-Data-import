@@ -161,7 +161,7 @@ def get_jobs_from_csv(header, elements, column_names):
     for element in elements:
         extract = []
         for idx in extract_elements:
-            v = element[idx].strip()
+            v = "" if element[idx] is None else element[idx].strip()
             if idx==0:
                 v = dateutil.parser.parse(v)
             extract.append(v)
@@ -193,10 +193,14 @@ def get_all_linkedin_jobs():
 
 def main():
     export_dir = "C:/Users/Peci/Downloads/"
-    user = "clemens.pecinovsky@gmx.at"
-    pwd = "Scoopex1"
+    settings = {}
+    with open('settings.ini') as fd:
+        settings_content = fd.read()
+        exec(settings_content, settings)
 
-    session, session_id = linkedin_login(user, pwd)
+    jobs_saved = get_linkedin_savedjobs(export_dir + "/Saved Jobs.csv")
+
+    session, session_id = linkedin_login(settings["usr"], settings["pwd"])
     job_list = get_jobs(session, session_id)
 
     #api = Linkedin(user, pwd)

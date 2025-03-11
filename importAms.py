@@ -6,8 +6,7 @@ import re
 import dateutil
 import requests
 from exportJobsLinkedIn import get_all_linkedin_jobs, parse_csv, get_jobs_from_csv
-from jobs.exportJobsingamejobs import get_all_ingamejob_jobs
-
+from exportJobsingamejobs import get_all_ingamejob_jobs
 
 def get_page_value(content, findstr, endstr):
     ret = None
@@ -533,11 +532,15 @@ def filter_jobs(jobs, ams_jobs):
     assert len(link_list_ams) == len(ams_jobs)
     missing = []
     changed = []
-    for job in jobs:
+    for jobidx, job in enumerate(jobs):
         if job[4] not in link_list_ams:
             missing.append(job)
         else:
             ams_job = ams_jobs[link_list_ams[job[4]]]
+            if job[2]=="" :
+                jobs[jobidx][2] = ams_job[2]
+            if job[3]=="" :
+                jobs[jobidx][3] = ams_job[3]
             if not (ams_job[1] == job[1] and ams_job[2] == fix_job_title(job[2]) and \
                 ams_job[3] == fix_job_title(job[3])):
                 print("no")
@@ -552,38 +555,48 @@ def is_job_open(jobdate):
     is_open = time_between_insertion.days<14
     return is_open
 
+def rindex(lst, val, start=None):
+    if start is None:
+        start = len(lst)-1
+    for i in range(start,-1,-1):
+        if lst[i] == val:
+            return i
+    return -1
+
 def main():
+    settings = {}
     with open('settings.ini') as fd:
-        settings = fd.read()
-        exec(settings)
+        settings_content = fd.read()
+        exec(settings_content, settings)
 
     jobs = ([[job[0],"linkedIn"]+job[1:]+[is_job_open(job[0])] for job in get_all_linkedin_jobs()] +
             [[job[0],"ingamejob"]+job[1:]+[is_job_open(job[0])] for job in get_all_ingamejob_jobs()])
     jobs.sort(reverse=True)
 
-    link_list = [j[4] for j in jobs]
-    duplicated = [item for item, count in collections.Counter(link_list).items() if count > 1]
-    #remove duplicated
+    link_list = [j[3] for j in jobs]
+    duplicated = [(item, count) for item, count in collections.Counter(link_list).items() if count > 1]
     if len(duplicated)>0:
-        for duplicate in duplicated:
-            idx = link_list.index(duplicate)
-            del jobs[idx]
-            del link_list[idx]
+        for duplicate, num in duplicated:
+            for i in range(num):
+                idx = rindex(link_list, duplicate)
+                del jobs[idx]
+                del link_list[idx]
 
-        link_list = [j[4] for j in jobs]
-        duplicated = [item for item, count in collections.Counter(link_list).items() if count > 1]
-        assert len(duplicated)==0
+        link_list2 = [j[3] for j in jobs]
+        duplicated2 = [item for item, count in collections.Counter(link_list2).items() if count > 1]
+        assert len(duplicated2)==0
+
 
     #assert len(link_list)== len(set(link_list))
 
-    ams_jobs = get_ams_jobs(usr, pwd)
+    ams_jobs = get_ams_jobs(settings["usr"], settings["pwd"])
 
     new_jobs, changed_jobs = filter_jobs(jobs, ams_jobs)
     if len(changed_jobs)>0:
-        update_changed_jons(usr, pwd, changed_jobs)
+        update_changed_jons(settings["usr"], settings["pwd"], changed_jobs)
 
     if len(new_jobs)>0:
-        add_ams_jobs(usr, pwd, new_jobs)
+        add_ams_jobs(settings["usr"], settings["pwd"], new_jobs)
 
     return 0
 
