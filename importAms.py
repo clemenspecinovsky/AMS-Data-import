@@ -475,10 +475,19 @@ def fix_job_title(job_title):
     if len(job_title) > 40:
         if job_title.find("(") > 0:
             idx = job_title.find("(")
-            job_title = job_title[0:idx]
+            job_title = fix_job_title(job_title[0:idx])
         elif job_title.find(",") > 0:
             idx = job_title.find(",")
-            job_title = job_title[0:idx]
+            job_title = fix_job_title(job_title[0:idx])
+        elif job_title.find(":") > 0:
+            idx = job_title.find(":")
+            job_title = fix_job_title(job_title[0:idx])
+        elif job_title.find("/") > 0:
+            idx = job_title.find("/")
+            job_title = fix_job_title(job_title[0:idx])
+        elif job_title.find("|") > 0:
+            idx = job_title.find("|")
+            job_title = fix_job_title(job_title[0:idx])
         else:
             job_title = job_title[0:40]
     job_title = job_title.replace(chr(1057), "C")
